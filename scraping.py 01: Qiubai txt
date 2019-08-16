@@ -1,12 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 
-#0test
-#url = 'https://www.qiushibaike.com/text/'
-#html = requests.get(url)
-#sp=BeautifulSoup(html.text,'html.parser')
-
-
 #1.下载网页，利用header 防止反爬虫
 def download_page(url,i):
     headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'}
@@ -79,14 +73,3 @@ if __name__ == '__main__':
    main()
 
 
-
-        
-
-
-#print(paras[0].text) 不可行，只能输出第一段txt
-
-
-#抓取信息method1
-#paras=sp.select('.contentHerf')
-#抓取信息method2
-#paras=sp.find_all('a',{'class':'contentHerf'})
