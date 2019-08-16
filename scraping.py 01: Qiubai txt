@@ -1,0 +1,92 @@
+import requests
+from bs4 import BeautifulSoup
+
+#0test
+#url = 'https://www.qiushibaike.com/text/'
+#html = requests.get(url)
+#sp=BeautifulSoup(html.text,'html.parser')
+
+
+#1.下载网页，利用header 防止反爬虫
+def download_page(url,i):
+    headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'}
+    html=requests.get(url,headers=headers)
+    return html
+    
+
+def get_content(html,i):
+    #2.解析下载后的网页
+    sp=BeautifulSoup(html.text,'html.parser')
+    
+    #3.抓取相关信息
+    #3.1选取做最大范围容器--包含相关信息
+    con_list = sp.find_all('div',{'class':'article block untagged mb15 typs_hot'})
+    #3.2选取单页单个entry,实现循环
+    for data in con_list:
+        #3.2.1一层标签
+        author = data.find('h2').get_text(strip=True)
+        #3.2.2如果标签层层嵌套，需要逐级find，但最多两级
+        content = data.find('div',{'class':'content'}).find('span').get_text(strip=True)        
+        votes = data.find('span',{'class':'stats-vote'}).find('i',{'class':'number'}).get_text(strip=True)
+        comments = data.find('a',{'class':'qiushi_comments'}).find('i',{'class':'number'}).get_text(strip=True)
+        #3.2.3标签内以及标签内容都有爬取信息
+        
+        #3.2.3.1存在匿名用户，因此需要考虑author_info is None 的情况
+        author_info = data.find('div',{'class':'articleGender'})
+        
+         
+        if author_info is not None:
+            #3.2.3.2author_info 的类型是 bs4.element.Tag，需要转化成list,不然无法识别 
+                #<div class="articleGender womenIcon">29</div>
+                #['articleGender', 'womenIcon']
+            class_list = author_info['class']
+            
+            if 'manIcon' in class_list:
+                gender = '男'
+            elif 'womenIcon'in class_list:
+                gender = '女'
+            else:
+                gender = ''
+            
+            age =author_info.get_text(strip=True)
+            
+        else:
+            gender = ''
+            age = ''
+            
+        #4格式化输出
+        output = """作者：{} 年龄：{} 性别：{} 点赞：{} 评论：{}\n{}\n------------\n"""
+        save_txt(output.format(author, age, gender, votes, comments, content))
+
+#4.1定义txt文件保存
+def save_txt(*args):
+   for data in args:
+       with open('qiubai.txt', 'a', encoding='utf-8') as f:
+           f.write(data)
+
+#5定义主程序，由单页变为多页
+def main():
+   #5.1 构造 url，
+   #5.2后面两个i 表示page no.可有可无
+   for i in range(1, 14):
+       url = 'https://qiushibaike.com/text/page/{}'.format(i)
+       html=download_page(url,i)
+       get_content(html, i)
+       
+
+#9 调用主程序      
+if __name__ == '__main__':
+   main()
+
+
+
+        
+
+
+#print(paras[0].text) 不可行，只能输出第一段txt
+
+
+#抓取信息method1
+#paras=sp.select('.contentHerf')
+#抓取信息method2
+#paras=sp.find_all('a',{'class':'contentHerf'})
