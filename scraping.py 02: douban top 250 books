@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 16 13:23:08 2019
+
+@author: zzynv
+"""
+
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+
+#1下载页面，headers 防止反爬虫
+def download_page(url,i):
+    headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'}
+    html=requests.get(url,headers=headers)
+    return html
+
+
+#2 解析页面、抓取信息、排列信息
+def get_content(html,i):
+    sp=BeautifulSoup(html.text,'html.parser')
+    
+    #2.1 缩小解析范围
+    books=sp.find_all('tr',{'class':'item'})
+   
+    
+    #2.2 准备6个空列表
+    title_list=[]
+    score_list=[]
+    comments_list=[]
+    intro_list=[]
+    publish_info_list=[]
+    book_link_list=[]  
+    
+    
+    
+    #2.3 针对单页每一项爬数，放进列表
+    for book in books:
+           
+           
+            book_link=book.find('a',{'class':'nbg'}).get('href')
+            #no=book.find('a',{'class':'nbg'}).get('onclick')#moreurl(this,{i:'0'})
+            #cover_img=sp.find('img').get('src')#https://img3.doubanio.com/view/subject/m/public/s1727290.jpg
+            title = book.find('div',{'class':'pl2'}).get_text(strip=True)
+            score = book.find('span',{'class':'rating_nums'}).get_text(strip=True)
+            comments = book.find('span',{'class':'pl'}).get_text(strip=True)
+            publish_info = book.find('p',{'class':'pl'}).get_text(strip=True)
+            
+            #2.3.1 有书无简介，报错，因此建立容错机制，让程序继续运行
+            try:
+                intro = book.find('span',{'class':'inq'}).get_text(strip=True)
+            except:
+                intro = ""
+           
+            #2.3.2 将信息一一存进6个一维列表
+            title_list.append(title)
+            score_list.append(score)
+            comments_list.append(comments)
+            intro_list.append(intro)
+            publish_info_list.append(publish_info)
+            book_link_list.append(book_link)  
+    
+    #2.4 把六个列表缝合，一维列表转二维列表a
+    main_list = list(zip(title_list,score_list,comments_list,intro_list,publish_info_list,book_link_list))
+    
+    #2.5 为get_content (函数) 设立返回值
+    return main_list
+            
+    
+   
+#3 定义主程序
+        
+def main():
+    #3.1 准备表格抬头-一维列表转二维列表b
+    name = ['书名','评分','关注度','简介','其它信息','相关链接']
+
+    #3.2 写入csv
+    with open('Douban_Top250.csv','w',encoding='gb18030') as f:
+        f_csv = csv.writer(f)
+        f_csv.writerow(name)
+        
+        for i in range (0,226,25):
+            url = 'https://book.douban.com/top250?start={}'.format(i)
+            html=download_page(url,i)
+            main_list=get_content(html,i)
+            f_csv.writerows(main_list)
+    
+    
+
+
+#4 调用主程序      
+if __name__ == '__main__':
+   main()
+   
+         
+
+        
+        
+        
+        
+        
+        
+        
+    
+        
+    
+    
